@@ -1,4 +1,3 @@
-
 import os
 import pickle
 import html
@@ -15,7 +14,33 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE_DIR, "movies.pkl"), "rb") as file:
     movies = pickle.load(file)
 
-with open(os.path.join(BASE_DIR, "similarity.pkl"), "rb") as file:
+# Load the similarity matrix:
+# - On Render, download it from the private Hugging Face dataset using HF_TOKEN.
+# - Locally, use similarity.pkl from the project directory as a fallback.
+HF_TOKEN = os.environ.get("HF_TOKEN")
+
+if HF_TOKEN:
+    from huggingface_hub import hf_hub_download
+
+    print("Downloading similarity matrix from Hugging Face...")
+
+    similarity_path = hf_hub_download(
+        repo_id="Bitsemmbler/movie-recommendation-assets",
+        filename="similarity.pkl",
+        repo_type="dataset",
+        token=HF_TOKEN
+    )
+else:
+    similarity_path = os.path.join(BASE_DIR, "similarity.pkl")
+
+    if not os.path.isfile(similarity_path):
+        raise RuntimeError(
+            "Similarity matrix not found. Set the HF_TOKEN environment "
+            "variable to download it from the private Hugging Face dataset, "
+            "or place similarity.pkl in the project directory."
+        )
+
+with open(similarity_path, "rb") as file:
     similarity = pickle.load(file)
 
 similarity = np.asarray(similarity)
